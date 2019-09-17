@@ -10,7 +10,7 @@
 结果为分数形式
 """
 from typing import Dict, List
-import sympy as sy
+import sympy as sp
 import numpy as np
 
 from enum import Enum
@@ -42,10 +42,10 @@ class Model:
         self.type = opt_type
         if opt_type == OptimizationType.maximization:
             for v in kwargs:
-                self.objective[v] = sy.Rational(kwargs[v])
+                self.objective[v] = sp.Rational(kwargs[v])
         else:
             for v in kwargs:
-                self.objective[v] = -sy.Rational(kwargs[v])
+                self.objective[v] = -sp.Rational(kwargs[v])
 
         self.constraints:List[Constraint] = [] # 约束列表
         self.less_than_constraints = 0 # 小于等于约束数量
@@ -77,14 +77,14 @@ class Model:
         :param constraint_type: 约束类型（大于等于，小于等于，等于）
         :param kwargs: 不等式左侧各变量系数
         """
-        constraint = sy.Rational(constraint)
+        constraint = sp.Rational(constraint)
         if constraint<0:
             right = -constraint
             left = {}
             for var_name in kwargs:
                 if var_name not in self.objective:
                     raise RuntimeError(f'variables \'{var_name}\' not in objective function!')
-                left[var_name] = -sy.Rational(kwargs[var_name])
+                left[var_name] = -sp.Rational(kwargs[var_name])
             if constraint_type == ConstraintType.LessEqual:
                 constraint_type = ConstraintType.GreaterEqual
             elif constraint_type == ConstraintType.GreaterEqual:
@@ -95,7 +95,7 @@ class Model:
             for var_name in kwargs:
                 if var_name not in self.objective:
                     raise RuntimeError(f'variables \'{var_name}\' not in objective function!')
-                left[var_name] = sy.Rational(kwargs[var_name])
+                left[var_name] = sp.Rational(kwargs[var_name])
         constraint = Constraint(left, constraint_type, right)
         if constraint_type==ConstraintType.LessEqual:
             self.less_than_constraints+=1
@@ -200,12 +200,12 @@ class Model:
         non_basic_vars = list(range(len(var_names)))
         var_names+=basic_var_names
 
-        t = sy.zeros(1,len(var_names)+1) # t是行向量
-        A = sy.Matrix(A)
-        I = sy.eye(len(basic_vars))
-        b = sy.Matrix(b) # b是列向量
+        t = sp.zeros(1, len(var_names) + 1) # t是行向量
+        A = sp.Matrix(A)
+        I = sp.eye(len(basic_vars))
+        b = sp.Matrix(b) # b是列向量
 
-        T = sy.Matrix(sy.BlockMatrix([[A, I, b]]))
+        T = sp.Matrix(sp.BlockMatrix([[A, I, b]]))
         for i in artificial_vars:
             t[0,i]=1
 
@@ -304,7 +304,7 @@ class Model:
             self.basic_variables[leaving_basic_index] = enter_basic
             self.non_basic_variables[enter_basic_index] = leaving_basic
 
-            E = sy.eye(m)
+            E = sp.eye(m)
             r = leaving_basic_index
             a_rk = T_star[r,enter_basic]
 
@@ -369,17 +369,17 @@ class Model:
     def _preare_second_phase(self):
         self.non_basic_variables = [ i for i in self.non_basic_variables if i not in self.artificial_variables]
         A = self.T_star[:,self.non_basic_variables]
-        I = sy.eye(len(self.basic_variables))
+        I = sp.eye(len(self.basic_variables))
 
         b=self.T_star[:, -1]
-        T=sy.Matrix(sy.BlockMatrix([[A, I, b]]))
+        T=sp.Matrix(sp.BlockMatrix([[A, I, b]]))
 
 
         var_names = np.array(self.variable_names)
         non_basic_varnames = list(var_names[self.non_basic_variables])
         basic_varnames = list(var_names[self.basic_variables])
         new_varnames = non_basic_varnames + basic_varnames
-        t=sy.zeros(1,len(new_varnames)+1)
+        t=sp.zeros(1, len(new_varnames) + 1)
         for var_name in self.objective:
             index = new_varnames.index(var_name)
             t[0,index] = - self.objective[var_name]

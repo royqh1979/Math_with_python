@@ -11,7 +11,7 @@
 
 结果为分数形式
 """
-import sympy as sy
+import sympy as sp
 
 
 class Model:
@@ -29,16 +29,16 @@ class Model:
         for v in kwargs:
             self.variable_names.append(v)
             self.original_variables.append(len(self.variable_names) - 1)
-            equation0_coefficients.append(sy.Rational(kwargs[v]))
+            equation0_coefficients.append(sp.Rational(kwargs[v]))
 
-        self.objective = sy.Matrix([equation0_coefficients])  # 目标优化函数的系数向量
+        self.objective = sp.Matrix([equation0_coefficients])  # 目标优化函数的系数向量
         self.constraints_left = []  # 约束的左侧
         self.constraints_right = []  # 约束的右侧
         self.non_basic_variables = [] # 非基变量集合
         self.basic_variables = []  # 基变量集合(下标为约束式序号-1） basic_variables[0]为约束式（1）对应的基变量，依此类推
-        self.B_inv : sy.Matrix = None #
-        self.t : sy.Matrix  = None # Row 0 of the initial tableau
-        self.T : sy.Matrix  = None # Other rows of the initial tableau
+        self.B_inv : sp.Matrix = None #
+        self.t : sp.Matrix  = None # Row 0 of the initial tableau
+        self.T : sp.Matrix  = None # Other rows of the initial tableau
 
     def add_constraint(self, constaint_value, **kwargs) -> None:
         """
@@ -52,11 +52,11 @@ class Model:
         for real_var in self.original_variables:
             real_var_name = self.variable_names[real_var]
             if real_var_name in kwargs:
-                constraint_left.append(sy.Rational(kwargs[real_var_name]))
+                constraint_left.append(sp.Rational(kwargs[real_var_name]))
             else:
                 constraint_left.append(0)
         self.constraints_left.append(constraint_left)
-        self.constraints_right.append(sy.Rational(constaint_value))
+        self.constraints_right.append(sp.Rational(constaint_value))
         self.variable_names.append('_s' + str(len(self.slack_variables) + 1))
         self.slack_variables.append(len(self.variable_names) - 1)
 
@@ -77,10 +77,10 @@ class Model:
                 print(f"{str(T_star[i, j]):<10} ", end="")
             print()
 
-    def _prepare_iteration_0(self, c:sy.Matrix, A:sy.Matrix, I:sy.Matrix, b:sy.Matrix)->(sy.Matrix,sy.Matrix):
-        zeros_1 = sy.zeros(1, len(self.slack_variables)+1)
-        t = sy.Matrix(sy.BlockMatrix([[-c, zeros_1]]))
-        T = sy.Matrix(sy.BlockMatrix([[A, I, b]]))
+    def _prepare_iteration_0(self, c:sp.Matrix, A:sp.Matrix, I:sp.Matrix, b:sp.Matrix)->(sp.Matrix, sp.Matrix):
+        zeros_1 = sp.zeros(1, len(self.slack_variables) + 1)
+        t = sp.Matrix(sp.BlockMatrix([[-c, zeros_1]]))
+        T = sp.Matrix(sp.BlockMatrix([[A, I, b]]))
         return t, T
 
     def _optimal_test(self, t_star,  non_basic_variables):
@@ -123,10 +123,10 @@ class Model:
         return min_index, min_ratio
 
     def solve(self):
-        c = sy.Matrix([self.objective])  # c是行向量
-        A = sy.Matrix(self.constraints_left)
-        I = sy.eye(len(self.slack_variables))
-        b = sy.Matrix(self.constraints_right) # b是列向量
+        c = sp.Matrix([self.objective])  # c是行向量
+        A = sp.Matrix(self.constraints_left)
+        I = sp.eye(len(self.slack_variables))
+        b = sp.Matrix(self.constraints_right) # b是列向量
 
         self.t, self.T = self._prepare_iteration_0(c, A, I, b)
         self.B_inv = I
@@ -168,7 +168,7 @@ class Model:
             self.basic_variables[leaving_basic_index] = enter_basic
             self.non_basic_variables[enter_basic_index] = leaving_basic
 
-            E = sy.eye(len(self.slack_variables))
+            E = sp.eye(len(self.slack_variables))
             r = leaving_basic_index
             a_rk = T_star[r,enter_basic]
 
